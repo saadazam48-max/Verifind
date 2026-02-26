@@ -496,18 +496,22 @@ function RestaurantLogo({ name, cuisine, emoji, size=46 }) {
   );
 }
 
-function Card({ r, highlighted, onClick, active }) {
+function Card({ r, highlighted, onClick, active, isMobile }) {
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + " " + r.address)}`;
+  const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(r.name + " " + r.address)}&navigate=yes`;
   return (
-    <div onClick={()=>onClick(r)} style={{
-      background: active?"#0f2a1e":highlighted?"#0d1f18":"#111827",
-      border: active?"1.5px solid #10B981":highlighted?"1px solid #065f46":"1px solid #1F2937",
-      borderRadius:14, padding:"14px 16px", cursor:"pointer",
+    <div style={{
+      background: active?"#0f2a1e":highlighted?"#1a1600":"#111827",
+      border: active?"1.5px solid #10B981":highlighted?"1px solid #F59E0B":"1px solid #1F2937",
+      borderRadius:14, padding:"14px 16px", cursor:isMobile?"default":"pointer",
       transition:"all 0.2s", position:"relative", overflow:"hidden",
+      boxShadow: highlighted&&!active ? "0 0 12px rgba(245,158,11,0.15)" : "none",
     }}
-      onMouseEnter={e=>{ if(!active) e.currentTarget.style.borderColor="#374151"; }}
-      onMouseLeave={e=>{ if(!active) e.currentTarget.style.borderColor=highlighted?"#065f46":"#1F2937"; }}
+      onClick={()=>!isMobile&&onClick(r)}
+      onMouseEnter={e=>{ if(!active&&!isMobile) e.currentTarget.style.borderColor="#374151"; }}
+      onMouseLeave={e=>{ if(!active&&!isMobile) e.currentTarget.style.borderColor=highlighted?"#F59E0B":"#1F2937"; }}
     >
-      {highlighted&&!active&&<div style={{ position:"absolute",top:8,right:8,background:"#10B981",color:"#000",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:20,letterSpacing:1 }}>AI PICK</div>}
+      {highlighted&&!active&&<div style={{ position:"absolute",top:8,right:8,background:"#F59E0B",color:"#000",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:20,letterSpacing:1 }}>⭐ AI PICK</div>}
       {active&&<div style={{ position:"absolute",top:8,right:8,background:"#10B981",color:"#000",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:20,letterSpacing:1 }}>ON MAP</div>}
       <div style={{ display:"flex",gap:12,alignItems:"flex-start" }}>
         <RestaurantLogo name={r.name} cuisine={r.cuisine} emoji={r.emoji} size={46}/>
@@ -540,6 +544,27 @@ function Card({ r, highlighted, onClick, active }) {
           </div>
         );
       })()}
+      {/* Mobile nav buttons */}
+      {isMobile && (
+        <div style={{ display:"flex", gap:8, marginTop:12 }}>
+          <a href={wazeUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{
+            flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+            background:"#0d2235", border:"1px solid #1a3a52", borderRadius:10,
+            padding:"9px 6px", textDecoration:"none", color:"#33CCFF", fontSize:12, fontWeight:700
+          }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#33CCFF" strokeWidth="1.5"/><path d="M8 13c0 2.21 1.79 4 4 4s4-1.79 4-4" stroke="#33CCFF" strokeWidth="1.5" fill="none" strokeLinecap="round"/><circle cx="9.5" cy="10.5" r="1" fill="#33CCFF"/><circle cx="14.5" cy="10.5" r="1" fill="#33CCFF"/></svg>
+            Waze
+          </a>
+          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{
+            flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+            background:"#0d1a2e", border:"1px solid #1a2d4a", borderRadius:10,
+            padding:"9px 6px", textDecoration:"none", color:"#4285F4", fontSize:12, fontWeight:700
+          }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#4285F4"/></svg>
+            Google Maps
+          </a>
+        </div>
+      )}
     </div>
   );
 }
@@ -944,7 +969,7 @@ RULES:
 
       {/* Input */}
       <div style={{ padding:"0 12px 10px",display:"flex",gap:8 }}>
-        <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder="burger, spicy lamb, date night..." style={{ flex:1,background:"#1a2332",border:"1px solid #2D3748",borderRadius:22,padding:"8px 14px",color:"#F9FAFB",fontSize:12.5,outline:"none",fontFamily:"inherit" }}/>
+        <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder="burger, spicy lamb, date night..." style={{ flex:1,background:"#1a2332",border:"1px solid #2D3748",borderRadius:22,padding:"8px 14px",color:"#F9FAFB",fontSize:16,outline:"none",fontFamily:"inherit",touchAction:"none" }}/>
         <button onClick={()=>send()} disabled={loading} style={{ width:36,height:36,borderRadius:"50%",background:loading?"#2D3748":"linear-gradient(135deg,#10B981,#059669)",border:"none",cursor:loading?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="white" strokeWidth="2"/></svg>
         </button>
@@ -1022,6 +1047,9 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
+    // Prevent iOS auto-zoom on input focus
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -1112,7 +1140,7 @@ export default function App() {
       <div style={{ padding:"10px 10px", display:"flex", flexDirection:"column", gap:8 }}>
         {sorted.map((r,i)=>(
           <div key={r.id} style={{ animation:`fadeUp 0.3s ${i*0.03}s ease both` }}>
-            <Card r={r} highlighted={highlighted.includes(r.id)} active={activePin?.id===r.id} onClick={handlePin}/>
+            <Card r={r} highlighted={highlighted.includes(r.id)} active={activePin?.id===r.id} onClick={handlePin} isMobile={isMobile}/>
           </div>
         ))}
         <div style={{ textAlign:"center", padding:"20px 0 10px", borderTop:"1px solid #1a2332", marginTop:4 }}>
@@ -1132,7 +1160,8 @@ export default function App() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
-        body{background:#080C14;font-family:'DM Sans',sans-serif;color:#F9FAFB;overflow:hidden;}
+        body{background:#080C14;font-family:'DM Sans',sans-serif;color:#F9FAFB;overflow:hidden;-webkit-text-size-adjust:100%;touch-action:pan-x pan-y;}
+        input,button{font-size:16px;-webkit-tap-highlight-color:transparent;}
         ::-webkit-scrollbar{width:3px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:#2D3748;border-radius:4px;}
         @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -1188,42 +1217,34 @@ export default function App() {
           <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
 
             {/* AI Concierge — pinned at top */}
-            <div style={{ flexShrink:0, borderBottom:"1px solid #1a2332", background:"#080e1a", zIndex:20 }}>
-              <AIChat restaurants={RESTAURANTS} onHighlight={ids=>{ setHighlighted(ids); setSheetExpanded(false); }}/>
+            <div style={{ flexShrink:0, borderBottom:"1px solid #1a2332", background:"#080e1a" }}>
+              <AIChat restaurants={RESTAURANTS} onHighlight={ids=>setHighlighted(ids)}/>
             </div>
 
-            {/* Map — fills remaining space */}
-            <div style={{ flex:1, position:"relative", overflow:"hidden" }}>
-              {mapsLoaded ? (
-                <GoogleMap restaurants={restaurants} highlighted={highlighted} activeId={activePin?.id} onPin={handlePin} userLocation={userLocation}/>
-              ) : (
-                <MockMap restaurants={restaurants} highlighted={highlighted} activeId={activePin?.id} onPin={handlePin} onLocate={handleLocate}/>
-              )}
-
-              {/* AI picks badge */}
-              {highlighted.length > 0 && (
-                <div style={{ position:"absolute", top:10, left:10, display:"flex", alignItems:"center", gap:6, background:"rgba(8,14,26,0.9)", padding:"5px 12px", borderRadius:20, backdropFilter:"blur(4px)", zIndex:10 }}>
-                  <span style={{ color:"#10B981", fontSize:11, fontWeight:700 }}>✨ {highlighted.length} AI picks on map</span>
+            {/* Restaurant list — scrollable */}
+            <div style={{ flex:1, overflowY:"auto", background:"#080C14" }}>
+              {/* Header bar */}
+              <div style={{ padding:"10px 12px 6px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:"1px solid #1a2332", position:"sticky", top:0, background:"#080C14", zIndex:10 }}>
+                <span style={{ fontSize:12, fontWeight:700, color:"#F9FAFB" }}>
+                  🍽️ {highlighted.length > 0 ? `${highlighted.length} AI picks` : `${sorted.length} Halal Spots`}
+                </span>
+                {highlighted.length > 0 && (
+                  <button onClick={()=>setHighlighted([])} style={{ fontSize:10, padding:"3px 10px", borderRadius:20, border:"1px solid #F59E0B", background:"transparent", color:"#F59E0B", cursor:"pointer" }}>Clear ✕</button>
+                )}
+              </div>
+              <div style={{ padding:"10px", display:"flex", flexDirection:"column", gap:10 }}>
+                {sorted.map((r,i)=>(
+                  <div key={r.id} style={{ animation:`fadeUp 0.3s ${i*0.02}s ease both` }}>
+                    <Card r={r} highlighted={highlighted.includes(r.id)} active={false} onClick={()=>{}} isMobile={true}/>
+                  </div>
+                ))}
+                <div style={{ textAlign:"center", padding:"16px 0 24px", borderTop:"1px solid #1a2332", marginTop:4 }}>
+                  <div style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:13, color:"#374151" }}>
+                    <span style={{ color:"#F9FAFB", fontWeight:600 }}>Veri</span><span style={{ color:"#10B981" }}>find</span>
+                  </div>
+                  <div style={{ fontSize:10, color:"#374151", marginTop:2 }}>All restaurants independently verified حلال</div>
                 </div>
-              )}
-
-              {/* Active pin detail card */}
-              {activePin && (
-                <div style={{ position:"absolute", bottom: sheetExpanded ? "77vh" : 64, left:12, right:12, zIndex:110, transition:"bottom 0.35s ease" }}>
-                  <DetailCard r={activePin} onClose={()=>setActivePin(null)} floating={false}/>
-                </div>
-              )}
-
-              {/* Bottom Sheet — restaurant list */}
-              <MobileBottomSheet expanded={sheetExpanded} onToggle={()=>setSheetExpanded(p=>!p)}>
-                <div style={{ padding:"4px 12px 8px", borderBottom:"1px solid #1a2332", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                  <span style={{ fontSize:12, fontWeight:700, color:"#F9FAFB" }}>🍽️ {restaurants.length} Halal Spots</span>
-                  {highlighted.length > 0 && (
-                    <button onClick={()=>setHighlighted([])} style={{ fontSize:10, padding:"3px 10px", borderRadius:20, border:"1px solid #065f46", background:"transparent", color:"#10B981", cursor:"pointer" }}>Clear AI picks ✕</button>
-                  )}
-                </div>
-                <RestaurantListContent/>
-              </MobileBottomSheet>
+              </div>
             </div>
 
           </div>
