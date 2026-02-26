@@ -520,7 +520,8 @@ function Card({ r, highlighted, onClick, active, isMobile }) {
             <h3 style={{ margin:0,fontWeight:700,color:"#F9FAFB",fontFamily:"'Cormorant Garamond',serif",fontSize:16,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis" }}>{r.name}</h3>
             {r.certified&&<span style={{ fontSize:11 }} title="Halal Certified">✅</span>}
           </div>
-          <div style={{ fontSize:11,color:"#6B7280",marginBottom:5 }}>{r.cuisine} · {P[r.price]}</div>
+          <div style={{ fontSize:11,color:"#6B7280",marginBottom:2 }}>{r.cuisine} · {P[r.price]}</div>
+          <div style={{ fontSize:11,color:"#6B7280",marginBottom:5,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis" }}>📍 {r.address}</div>
           <StarsSimple rating={r.rating}/>
         </div>
       </div>
