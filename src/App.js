@@ -980,6 +980,36 @@ RULES:
 }
 
 
+// ── Mobile Bottom Sheet ───────────────────────────────────────────────────────
+function MobileBottomSheet({ children, expanded, onToggle }) {
+  return (
+    <div style={{
+      position: "fixed",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      zIndex: 100,
+      background: "#080e1a",
+      borderRadius: "20px 20px 0 0",
+      borderTop: "1px solid #1a2332",
+      boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
+      transition: "height 0.35s cubic-bezier(0.4,0,0.2,1)",
+      height: expanded ? "75vh" : "52px",
+      display: "flex",
+      flexDirection: "column",
+      overflow: "hidden",
+    }}>
+      {/* Drag handle */}
+      <div onClick={onToggle} style={{ padding: "10px 0 6px", display:"flex", flexDirection:"column", alignItems:"center", cursor:"pointer", flexShrink:0 }}>
+        <div style={{ width:36, height:4, background:"#2D3748", borderRadius:4 }}/>
+      </div>
+      <div style={{ flex:1, overflowY: expanded ? "auto" : "hidden" }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 // ── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [highlighted, setHighlighted] = useState([]);
@@ -988,6 +1018,15 @@ export default function App() {
   const [loadingRestaurants, setLoadingRestaurants] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [mapsLoaded, setMapsLoaded] = useState(!!window.google);
+  const [mobileTab, setMobileTab] = useState("map"); // "map" | "list" | "ai"
+  const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Load Google Maps JS SDK once
   useEffect(() => {
@@ -1047,11 +1086,47 @@ export default function App() {
     return bh-ah||b.rating-a.rating;
   });
 
-  const handlePin = (r) => setActivePin(prev=>prev?.id===r.id?null:r);
+  const handlePin = (r) => {
+    setActivePin(prev=>prev?.id===r.id?null:r);
+    if (isMobile) setSheetExpanded(false); // collapse sheet to show map pin
+  };
   const handleLocate = (lat, lng) => {
     setUserLocation({ lat, lng });
     fetchRestaurants(lat, lng);
   };
+
+  const RestaurantListContent = () => (
+    <>
+      {loadingRestaurants && (
+        <div style={{ padding:"6px 12px", display:"flex", alignItems:"center", gap:6 }}>
+          <div style={{ width:6, height:6, borderRadius:"50%", background:"#10B981", animation:"bounce 0.9s 0s infinite" }}/>
+          <div style={{ width:6, height:6, borderRadius:"50%", background:"#10B981", animation:"bounce 0.9s 0.2s infinite" }}/>
+          <div style={{ width:6, height:6, borderRadius:"50%", background:"#10B981", animation:"bounce 0.9s 0.4s infinite" }}/>
+          <span style={{ fontSize:10, color:"#6B7280" }}>Finding halal spots near you...</span>
+        </div>
+      )}
+      {highlighted.length>0 && (
+        <div style={{ padding:"8px 12px 0" }}>
+          <button onClick={()=>setHighlighted([])} style={{ fontSize:11, padding:"4px 12px", borderRadius:20, border:"1px solid #065f46", background:"transparent", color:"#10B981", cursor:"pointer" }}>Clear AI picks ✕</button>
+        </div>
+      )}
+      <div style={{ padding:"10px 10px", display:"flex", flexDirection:"column", gap:8 }}>
+        {sorted.map((r,i)=>(
+          <div key={r.id} style={{ animation:`fadeUp 0.3s ${i*0.03}s ease both` }}>
+            <Card r={r} highlighted={highlighted.includes(r.id)} active={activePin?.id===r.id} onClick={handlePin}/>
+          </div>
+        ))}
+        <div style={{ textAlign:"center", padding:"20px 0 10px", borderTop:"1px solid #1a2332", marginTop:4 }}>
+          <div style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:13, color:"#374151" }}>
+            <span style={{ color:"#F9FAFB", fontWeight:600 }}>Veri</span><span style={{ color:"#10B981" }}>find</span>
+          </div>
+          <div style={{ fontSize:10, color:"#374151", marginTop:2 }}>
+            A <span style={{ color:"#6B7280" }}>Vita Industries</span> product · All restaurants independently verified حلال
+          </div>
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <>
@@ -1069,96 +1144,115 @@ export default function App() {
       <div style={{ height:"100vh", display:"flex", flexDirection:"column" }}>
 
         {/* Header */}
-        <header style={{ background:"#0D1117", borderBottom:"1px solid #1a2332", padding:"0 20px", height:58, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
-          <Wordmark size="lg"/>
+        <header style={{ background:"#0D1117", borderBottom:"1px solid #1a2332", padding:"0 16px", height:54, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+          <Wordmark size={isMobile ? "sm" : "lg"}/>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <div style={{ fontSize:11, color:"#6B7280", background:"#1a2332", padding:"4px 10px", borderRadius:20 }}>📍 London, UK</div>
+            {!isMobile && <div style={{ fontSize:11, color:"#6B7280", background:"#1a2332", padding:"4px 10px", borderRadius:20 }}>📍 London, UK</div>}
             <div style={{ width:32, height:32, borderRadius:"50%", background:"linear-gradient(135deg,#10B981,#065f46)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:14 }}>👤</div>
           </div>
         </header>
 
-        {/* Body */}
-        <div style={{ flex:1, display:"flex", overflow:"hidden" }}>
-
-          {/* ── LEFT COLUMN: AI Chat + Restaurant Cards ── */}
-          <div style={{ width:300, flexShrink:0, borderRight:"1px solid #1a2332", display:"flex", flexDirection:"column", overflow:"hidden", background:"#080e1a" }}>
-
-            {/* AI Chat — bigger presence */}
-            <div style={{ flexShrink:0, borderBottom:"1px solid #1a2332" }}>
-              <AIChat restaurants={RESTAURANTS} onHighlight={ids=>setHighlighted(ids)}/>
+        {/* ── DESKTOP LAYOUT ── */}
+        {!isMobile && (
+          <div style={{ flex:1, display:"flex", overflow:"hidden" }}>
+            {/* LEFT COLUMN */}
+            <div style={{ width:300, flexShrink:0, borderRight:"1px solid #1a2332", display:"flex", flexDirection:"column", overflow:"hidden", background:"#080e1a" }}>
+              <div style={{ flexShrink:0, borderBottom:"1px solid #1a2332" }}>
+                <AIChat restaurants={RESTAURANTS} onHighlight={ids=>setHighlighted(ids)}/>
+              </div>
+              <div style={{ flex:1, overflowY:"auto" }}>
+                <RestaurantListContent/>
+              </div>
             </div>
 
-            {/* Clear AI picks */}
-            {loadingRestaurants && (
-              <div style={{ padding:"6px 12px", flexShrink:0, display:"flex", alignItems:"center", gap:6 }}>
-                <div style={{ width:6, height:6, borderRadius:"50%", background:"#10B981", animation:"bounce 0.9s 0s infinite" }}/>
-                <div style={{ width:6, height:6, borderRadius:"50%", background:"#10B981", animation:"bounce 0.9s 0.2s infinite" }}/>
-                <div style={{ width:6, height:6, borderRadius:"50%", background:"#10B981", animation:"bounce 0.9s 0.4s infinite" }}/>
-                <span style={{ fontSize:10, color:"#6B7280" }}>Finding halal spots near you...</span>
+            {/* RIGHT: Map */}
+            <div style={{ flex:1, position:"relative", overflow:"hidden" }}>
+              {mapsLoaded ? (
+                <GoogleMap restaurants={restaurants} highlighted={highlighted} activeId={activePin?.id} onPin={handlePin} userLocation={userLocation}/>
+              ) : (
+                <MockMap restaurants={restaurants} highlighted={highlighted} activeId={activePin?.id} onPin={handlePin} onLocate={handleLocate}/>
+              )}
+              <div style={{ position:"absolute", top:12, left:12, display:"flex", alignItems:"center", gap:6, background:"rgba(8,14,26,0.85)", padding:"5px 12px", borderRadius:20, backdropFilter:"blur(4px)" }}>
+                <Logo size={16}/>
+                <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:12, color:"#F9FAFB" }}>
+                  Verifind <span style={{ color:"#10B981" }}>Map</span>
+                  {highlighted.length>0 && <span style={{ color:"#10B981", marginLeft:6, fontSize:10 }}>· {highlighted.length} AI picks</span>}
+                </span>
               </div>
-            )}
-            {highlighted.length>0 && (
-              <div style={{ padding:"8px 12px 0", flexShrink:0 }}>
-                <button onClick={()=>setHighlighted([])} style={{ fontSize:11, padding:"4px 12px", borderRadius:20, border:"1px solid #065f46", background:"transparent", color:"#10B981", cursor:"pointer" }}>Clear AI picks ✕</button>
-              </div>
-            )}
-
-            {/* Restaurant Cards */}
-            <div style={{ flex:1, overflowY:"auto", padding:"10px 10px", display:"flex", flexDirection:"column", gap:8 }}>
-              {sorted.map((r,i)=>(
-                <div key={r.id} style={{ animation:`fadeUp 0.3s ${i*0.03}s ease both` }}>
-                  <Card r={r} highlighted={highlighted.includes(r.id)} active={activePin?.id===r.id} onClick={handlePin}/>
-                </div>
-              ))}
-              {/* Footer */}
-              <div style={{ textAlign:"center", padding:"20px 0 10px", borderTop:"1px solid #1a2332", marginTop:4 }}>
-                <div style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:13, color:"#374151" }}>
-                  <span style={{ color:"#F9FAFB", fontWeight:600 }}>Veri</span><span style={{ color:"#10B981" }}>find</span>
-                </div>
-                <div style={{ fontSize:10, color:"#374151", marginTop:2 }}>
-                  A <span style={{ color:"#6B7280" }}>Vita Industries</span> product · All restaurants independently verified حلال
-                </div>
-              </div>
+              {activePin && <DetailCard r={activePin} onClose={()=>setActivePin(null)} floating={true}/>}
             </div>
           </div>
+        )}
 
-          {/* ── RIGHT: Full Map fills everything ── */}
+        {/* ── MOBILE LAYOUT ── */}
+        {isMobile && (
           <div style={{ flex:1, position:"relative", overflow:"hidden" }}>
-            {mapsLoaded ? (
-              <GoogleMap
-                restaurants={restaurants}
-                highlighted={highlighted}
-                activeId={activePin?.id}
-                onPin={handlePin}
-                userLocation={userLocation}
-              />
-            ) : (
-              <MockMap
-                restaurants={restaurants}
-                highlighted={highlighted}
-                activeId={activePin?.id}
-                onPin={handlePin}
-                onLocate={handleLocate}
-              />
-            )}
+            {/* Full-screen map */}
+            <div style={{ position:"absolute", inset:0 }}>
+              {mapsLoaded ? (
+                <GoogleMap restaurants={restaurants} highlighted={highlighted} activeId={activePin?.id} onPin={handlePin} userLocation={userLocation}/>
+              ) : (
+                <MockMap restaurants={restaurants} highlighted={highlighted} activeId={activePin?.id} onPin={handlePin} onLocate={handleLocate}/>
+              )}
+            </div>
 
-            {/* Map label */}
-            <div style={{ position:"absolute", top:12, left:12, display:"flex", alignItems:"center", gap:6, background:"rgba(8,14,26,0.85)", padding:"5px 12px", borderRadius:20, backdropFilter:"blur(4px)" }}>
-              <Logo size={16}/>
-              <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:12, color:"#F9FAFB" }}>
+            {/* Map top label */}
+            <div style={{ position:"absolute", top:10, left:10, display:"flex", alignItems:"center", gap:6, background:"rgba(8,14,26,0.85)", padding:"5px 12px", borderRadius:20, backdropFilter:"blur(4px)", zIndex:10 }}>
+              <Logo size={14}/>
+              <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:11, color:"#F9FAFB" }}>
                 Verifind <span style={{ color:"#10B981" }}>Map</span>
-                {highlighted.length>0 && <span style={{ color:"#10B981", marginLeft:6, fontSize:10 }}>· {highlighted.length} AI picks</span>}
+                {highlighted.length>0 && <span style={{ color:"#10B981", marginLeft:4, fontSize:9 }}>· {highlighted.length} AI picks</span>}
               </span>
             </div>
 
-            {/* Pin detail — floats over map */}
-            {activePin && (
-              <DetailCard r={activePin} onClose={()=>setActivePin(null)} floating={true}/>
-            )}
-          </div>
+            {/* Mobile tab bar — floats over map */}
+            <div style={{ position:"absolute", top:10, right:10, zIndex:20, display:"flex", flexDirection:"column", gap:6 }}>
+              {[
+                { id:"list", icon:"🍽️", label:"List" },
+                { id:"ai",   icon:"✨", label:"AI" },
+              ].map(tab => (
+                <button key={tab.id} onClick={()=>{ setMobileTab(tab.id); setSheetExpanded(true); }}
+                  style={{ background: mobileTab===tab.id&&sheetExpanded ? "#10B981" : "rgba(8,14,26,0.9)", border:`1px solid ${mobileTab===tab.id&&sheetExpanded?"#10B981":"#2D3748"}`, borderRadius:10, padding:"8px 10px", color: mobileTab===tab.id&&sheetExpanded?"#000":"#F9FAFB", fontSize:11, fontWeight:600, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:2, backdropFilter:"blur(4px)", minWidth:44 }}>
+                  <span style={{ fontSize:16 }}>{tab.icon}</span>
+                  <span style={{ fontSize:9 }}>{tab.label}</span>
+                </button>
+              ))}
+            </div>
 
-        </div>
+            {/* Active pin detail card — floats above bottom sheet */}
+            {activePin && (
+              <div style={{ position:"absolute", bottom: sheetExpanded ? "77vh" : 64, left:12, right:12, zIndex:110, transition:"bottom 0.35s ease" }}>
+                <DetailCard r={activePin} onClose={()=>setActivePin(null)} floating={false}/>
+              </div>
+            )}
+
+            {/* Bottom Sheet */}
+            <MobileBottomSheet expanded={sheetExpanded} onToggle={()=>setSheetExpanded(p=>!p)}>
+              {/* Tab switcher inside sheet */}
+              <div style={{ display:"flex", gap:0, padding:"0 12px 10px", borderBottom:"1px solid #1a2332" }}>
+                {[
+                  { id:"list", label:"🍽️ Restaurants" },
+                  { id:"ai",   label:"✨ AI Chat" },
+                ].map(tab => (
+                  <button key={tab.id} onClick={()=>setMobileTab(tab.id)}
+                    style={{ flex:1, padding:"7px 0", background:"transparent", border:"none", borderBottom: mobileTab===tab.id ? "2px solid #10B981" : "2px solid transparent", color: mobileTab===tab.id ? "#10B981" : "#6B7280", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {mobileTab === "ai" && (
+                <AIChat restaurants={RESTAURANTS} onHighlight={ids=>setHighlighted(ids)}/>
+              )}
+              {mobileTab === "list" && (
+                <RestaurantListContent/>
+              )}
+            </MobileBottomSheet>
+          </div>
+        )}
+
       </div>
     </>
   );
 }
+
