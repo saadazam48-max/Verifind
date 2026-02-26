@@ -139,9 +139,7 @@ const RESTAURANTS = [
   { id:105,name:"Bao Fitzrovia",            cuisine:"Taiwanese",    rating:4.5, price:2, reviews:1980, address:"31 Windmill St, Fitzrovia",       certified:true,  tags:["Bao","Taiwanese","Lunch","Casual","Small Plates"],               dishes:["Classic Bao","Confit Pork","Fried Chicken Bao","Horlicks Soft Serve"], emoji:"🥟", x:57, y:38, instagram:"baolondon",     igFollowers:"142K", lat:51.5189, lng:-0.1352 },
 ];
 
-const CUISINES = ["All","Burgers","Indian","Pakistani","Turkish","Lebanese","Middle Eastern","Moroccan","Thai","Italian","Japanese","Seafood","Chicken","Pizza","Korean","West African","Persian","Ethiopian","Steakhouse","Mexican","Desserts"];
 const P = {1:"£",2:"££",3:"£££",4:"££££"};
-const GOOGLE_KEY = "AIzaSyBOaU_ihS3RqNo3X5Strpp3OsD6RI7unQM";
 
 // ── Mock busyness data ────────────────────────────────────────────────────────
 function getPopularTimes(id) {
@@ -242,19 +240,6 @@ function Wordmark({ size="lg" }) {
   );
 }
 
-function Stars({ rating }) {
-  return (
-    <div style={{ display:"flex", alignItems:"center", gap:2 }}>
-      {[1,2,3,4,5].map(i=>(
-        <svg key={i} width="11" height="11" viewBox="0 0 24 24" fill={i<=Math.round(rating)?"#F59E0B":"#2D3748"}>
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-        </svg>
-      ))}
-      <span style={{ fontSize:11, color:"#6B7280", marginLeft:3 }}>{rating} ({r => r > 1000 ? (r/1000).toFixed(1)+"k" : r})</span>
-    </div>
-  );
-}
-
 function StarsSimple({ rating }) {
   return (
     <div style={{ display:"flex", alignItems:"center", gap:2 }}>
@@ -301,7 +286,7 @@ function RestaurantLogo({ name, cuisine, emoji, size=46 }) {
     logoCache[cacheKey] = url;
     setImgUrl(url);
     setLoading(false);
-  }, [name]);
+  }, [name]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getCuisineAvatarStyle = (cuisine) => {
     const c = (cuisine||"").toLowerCase();
@@ -568,7 +553,6 @@ function GoogleMap({ restaurants, highlighted, activeId, onPin, userLocation }) 
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markersRef = useRef([]);
-  const infoRef = useRef(null);
 
   useEffect(() => {
     if (!window.google || !mapRef.current) return;
@@ -625,7 +609,7 @@ function GoogleMap({ restaurants, highlighted, activeId, onPin, userLocation }) 
       marker.addListener("click", () => onPin(r));
       markersRef.current.push(marker);
     });
-  }, [restaurants, highlighted, activeId]);
+  }, [restaurants, highlighted, activeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pan to active pin
   useEffect(() => {
