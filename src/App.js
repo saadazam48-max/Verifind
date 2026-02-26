@@ -497,22 +497,29 @@ function RestaurantLogo({ name, cuisine, emoji, size=46 }) {
 }
 
 function Card({ r, highlighted, onClick, active, isMobile }) {
+  const [expanded, setExpanded] = useState(false);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + " " + r.address)}`;
   const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(r.name + " " + r.address)}&navigate=yes`;
+  const igUrl = `https://instagram.com/${r.instagram}`;
+  const pct = getCurrentBusyness(r.id);
+  const { label: busyLabel, color: busyColor } = getBusynessLabel(pct);
+
   return (
     <div style={{
-      background: active?"#0f2a1e":highlighted?"#1a1600":"#111827",
-      border: active?"1.5px solid #10B981":highlighted?"1px solid #F59E0B":"1px solid #1F2937",
-      borderRadius:14, padding:"14px 16px", cursor:isMobile?"default":"pointer",
+      background: highlighted?"#1a1600":"#111827",
+      border: highlighted?"1px solid #F59E0B":expanded&&isMobile?"1px solid #10B981":"1px solid #1F2937",
+      borderRadius:14, padding:"14px 16px", cursor:"pointer",
       transition:"all 0.2s", position:"relative", overflow:"hidden",
-      boxShadow: highlighted&&!active ? "0 0 12px rgba(245,158,11,0.15)" : "none",
+      boxShadow: highlighted ? "0 0 12px rgba(245,158,11,0.15)" : expanded&&isMobile ? "0 0 16px rgba(16,185,129,0.15)" : "none",
     }}
-      onClick={()=>!isMobile&&onClick(r)}
-      onMouseEnter={e=>{ if(!active&&!isMobile) e.currentTarget.style.borderColor="#374151"; }}
-      onMouseLeave={e=>{ if(!active&&!isMobile) e.currentTarget.style.borderColor=highlighted?"#F59E0B":"#1F2937"; }}
+      onClick={()=>isMobile ? setExpanded(p=>!p) : onClick(r)}
+      onMouseEnter={e=>{ if(!isMobile) e.currentTarget.style.borderColor="#374151"; }}
+      onMouseLeave={e=>{ if(!isMobile) e.currentTarget.style.borderColor=highlighted?"#F59E0B":"#1F2937"; }}
     >
-      {highlighted&&!active&&<div style={{ position:"absolute",top:8,right:8,background:"#F59E0B",color:"#000",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:20,letterSpacing:1 }}>⭐ AI PICK</div>}
-      {active&&<div style={{ position:"absolute",top:8,right:8,background:"#10B981",color:"#000",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:20,letterSpacing:1 }}>ON MAP</div>}
+      {highlighted&&<div style={{ position:"absolute",top:8,right:8,background:"#F59E0B",color:"#000",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:20,letterSpacing:1 }}>⭐ AI PICK</div>}
+      {!highlighted&&active&&<div style={{ position:"absolute",top:8,right:8,background:"#10B981",color:"#000",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:20,letterSpacing:1 }}>ON MAP</div>}
+
+      {/* Card header */}
       <div style={{ display:"flex",gap:12,alignItems:"flex-start" }}>
         <RestaurantLogo name={r.name} cuisine={r.cuisine} emoji={r.emoji} size={46}/>
         <div style={{ flex:1,minWidth:0 }}>
@@ -524,46 +531,92 @@ function Card({ r, highlighted, onClick, active, isMobile }) {
           <div style={{ fontSize:11,color:"#6B7280",marginBottom:5,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis" }}>📍 {r.address}</div>
           <StarsSimple rating={r.rating}/>
         </div>
+        {isMobile && (
+          <div style={{ fontSize:16, color:"#6B7280", flexShrink:0, marginTop:2 }}>{expanded?"▲":"▼"}</div>
+        )}
       </div>
+
+      {/* Tags */}
       <div style={{ marginTop:10,display:"flex",gap:4,flexWrap:"wrap" }}>
         {r.tags.slice(0,3).map(t=>(
           <span key={t} style={{ fontSize:10,background:"#1a2332",color:"#9CA3AF",padding:"2px 8px",borderRadius:20 }}>{t}</span>
         ))}
       </div>
-      {/* Busyness inline */}
-      {(() => {
-        const pct = getCurrentBusyness(r.id);
-        const { label, color } = getBusynessLabel(pct);
-        return (
-          <div style={{ marginTop:10, display:"flex", alignItems:"center", gap:8 }}>
-            <div style={{ flex:1, height:4, background:"#1F2937", borderRadius:4, overflow:"hidden" }}>
-              <div style={{ width:`${pct}%`, height:"100%", background:color, borderRadius:4, transition:"width 0.5s ease" }}/>
+
+      {/* Busyness bar — always visible */}
+      <div style={{ marginTop:10, display:"flex", alignItems:"center", gap:8 }}>
+        <div style={{ flex:1, height:4, background:"#1F2937", borderRadius:4, overflow:"hidden" }}>
+          <div style={{ width:`${pct}%`, height:"100%", background:busyColor, borderRadius:4, transition:"width 0.5s ease" }}/>
+        </div>
+        <span style={{ fontSize:10, color:busyColor, fontWeight:600, whiteSpace:"nowrap" }}>
+          <span style={{ fontSize:8, marginRight:3 }}>●</span>{busyLabel}
+        </span>
+      </div>
+
+      {/* ── EXPANDED DETAIL (mobile tap) ── */}
+      {isMobile && expanded && (
+        <div style={{ marginTop:14, borderTop:"1px solid #1F2937", paddingTop:14, animation:"fadeUp 0.2s ease" }}>
+
+          {/* All tags */}
+          <div style={{ marginBottom:12 }}>
+            <div style={{ fontSize:10,color:"#6B7280",letterSpacing:"1px",textTransform:"uppercase",marginBottom:6 }}>Tags</div>
+            <div style={{ display:"flex",flexWrap:"wrap",gap:5 }}>
+              {r.tags.map(t=>(
+                <span key={t} style={{ fontSize:10,background:"#111827",color:"#9CA3AF",padding:"2px 8px",borderRadius:20 }}>{t}</span>
+              ))}
             </div>
-            <span style={{ fontSize:10, color:color, fontWeight:600, whiteSpace:"nowrap" }}>
-              <span style={{ fontSize:8, marginRight:3 }}>●</span>{label}
-            </span>
           </div>
-        );
-      })()}
-      {/* Mobile nav buttons */}
-      {isMobile && (
-        <div style={{ display:"flex", gap:8, marginTop:12 }}>
-          <a href={wazeUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{
-            flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6,
-            background:"#0d2235", border:"1px solid #1a3a52", borderRadius:10,
-            padding:"9px 6px", textDecoration:"none", color:"#33CCFF", fontSize:12, fontWeight:700
-          }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#33CCFF" strokeWidth="1.5"/><path d="M8 13c0 2.21 1.79 4 4 4s4-1.79 4-4" stroke="#33CCFF" strokeWidth="1.5" fill="none" strokeLinecap="round"/><circle cx="9.5" cy="10.5" r="1" fill="#33CCFF"/><circle cx="14.5" cy="10.5" r="1" fill="#33CCFF"/></svg>
-            Waze
-          </a>
-          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{
-            flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6,
-            background:"#0d1a2e", border:"1px solid #1a2d4a", borderRadius:10,
-            padding:"9px 6px", textDecoration:"none", color:"#4285F4", fontSize:12, fontWeight:700
-          }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#4285F4"/></svg>
-            Google Maps
-          </a>
+
+          {/* Popular dishes */}
+          <div style={{ marginBottom:12 }}>
+            <div style={{ fontSize:10,color:"#6B7280",letterSpacing:"1px",textTransform:"uppercase",marginBottom:6 }}>Popular Dishes</div>
+            <div style={{ display:"flex",flexWrap:"wrap",gap:5 }}>
+              {r.dishes.map(d=>(
+                <span key={d} style={{ fontSize:11,background:"#1a2332",color:"#D1FAE5",padding:"3px 10px",borderRadius:20 }}>{d}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Busyness chart */}
+          <div style={{ marginBottom:14 }}>
+            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6 }}>
+              <div style={{ fontSize:10,color:"#6B7280",letterSpacing:"1px",textTransform:"uppercase" }}>How Busy Right Now</div>
+              <div style={{ display:"flex",alignItems:"center",gap:5 }}>
+                <div style={{ width:7,height:7,borderRadius:"50%",background:busyColor,animation:"busynessPulse 1.5s infinite" }}/>
+                <span style={{ fontSize:12,color:busyColor,fontWeight:700 }}>{busyLabel}</span>
+                <span style={{ fontSize:11,color:"#4B5563" }}>· {pct}%</span>
+              </div>
+            </div>
+            <BusynessChart id={r.id}/>
+          </div>
+
+          {/* Navigation buttons */}
+          <div style={{ display:"flex",gap:6,marginBottom:r.instagram?10:0 }}>
+            <a href={wazeUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#0d2235",border:"1px solid #1a3a52",borderRadius:9,padding:"9px 6px",textDecoration:"none",color:"#33CCFF",fontSize:11,fontWeight:700 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#33CCFF" strokeWidth="1.5"/><path d="M8 13c0 2.21 1.79 4 4 4s4-1.79 4-4" stroke="#33CCFF" strokeWidth="1.5" fill="none" strokeLinecap="round"/><circle cx="9.5" cy="10.5" r="1" fill="#33CCFF"/><circle cx="14.5" cy="10.5" r="1" fill="#33CCFF"/></svg>
+              Waze
+            </a>
+            <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#0d1a2e",border:"1px solid #1a2d4a",borderRadius:9,padding:"9px 6px",textDecoration:"none",color:"#4285F4",fontSize:11,fontWeight:700 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#4285F4"/></svg>
+              Google Maps
+            </a>
+            <a href={`https://maps.apple.com/?q=${encodeURIComponent(r.name + " " + r.address)}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6,background:"#1a2332",border:"1px solid #2D3748",borderRadius:9,padding:"9px 6px",textDecoration:"none",color:"#F9FAFB",fontSize:11,fontWeight:700 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#fff"/></svg>
+              Apple Maps
+            </a>
+          </div>
+
+          {/* Instagram */}
+          {r.instagram && (
+            <a href={igUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ display:"flex",alignItems:"center",gap:8,background:"linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)",borderRadius:9,padding:"9px 14px",textDecoration:"none" }}>
+              <IGIcon size={14}/>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12,fontWeight:700,color:"#fff" }}>@{r.instagram}</div>
+                {r.igFollowers&&<div style={{ fontSize:10,color:"rgba(255,255,255,0.75)" }}>{r.igFollowers} followers</div>}
+              </div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+            </a>
+          )}
         </div>
       )}
     </div>
