@@ -738,7 +738,7 @@ RULES:
 - At the end output EXACTLY: <recommend>[id1,id2]</recommend> with the matching restaurant IDs`;
 
     try {
-      const res = await fetch("http://localhost:3001/ai",{
+      const res = await fetch("https://verifind-server.onrender.com/ai",{
         method:"POST", headers:{ "Content-Type":"application/json" },
         body:JSON.stringify({ system:sys,
           messages:[...msgs.map(m=>({role:m.role,content:m.content})),{role:"user",content:txt}]
@@ -834,7 +834,7 @@ export default function App() {
   // Fetch restaurants from our server
   const fetchRestaurants = (lat, lng) => {
     setLoadingRestaurants(true);
-    fetch(`http://localhost:3001/restaurants?lat=${lat}&lng=${lng}&radius=5000`)
+    fetch(`https://verifind-server.onrender.com/restaurants?lat=${lat}&lng=${lng}&radius=5000`)
       .then(r => r.json())
       .then(data => {
         if (data.restaurants?.length > 0) {
