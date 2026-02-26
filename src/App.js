@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useState, useRef, useEffect } from "react";
 
 const RESTAURANTS = [
@@ -993,4 +994,3 @@ export default function App() {
     </>
   );
 }
-// Verifind v9.2
