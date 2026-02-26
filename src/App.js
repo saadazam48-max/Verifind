@@ -1018,7 +1018,6 @@ export default function App() {
   const [loadingRestaurants, setLoadingRestaurants] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [mapsLoaded, setMapsLoaded] = useState(!!window.google);
-  const [mobileTab, setMobileTab] = useState("map"); // "map" | "list" | "ai"
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -1186,68 +1185,47 @@ export default function App() {
 
         {/* ── MOBILE LAYOUT ── */}
         {isMobile && (
-          <div style={{ flex:1, position:"relative", overflow:"hidden" }}>
-            {/* Full-screen map */}
-            <div style={{ position:"absolute", inset:0 }}>
+          <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+
+            {/* AI Concierge — pinned at top */}
+            <div style={{ flexShrink:0, borderBottom:"1px solid #1a2332", background:"#080e1a", zIndex:20 }}>
+              <AIChat restaurants={RESTAURANTS} onHighlight={ids=>{ setHighlighted(ids); setSheetExpanded(false); }}/>
+            </div>
+
+            {/* Map — fills remaining space */}
+            <div style={{ flex:1, position:"relative", overflow:"hidden" }}>
               {mapsLoaded ? (
                 <GoogleMap restaurants={restaurants} highlighted={highlighted} activeId={activePin?.id} onPin={handlePin} userLocation={userLocation}/>
               ) : (
                 <MockMap restaurants={restaurants} highlighted={highlighted} activeId={activePin?.id} onPin={handlePin} onLocate={handleLocate}/>
               )}
-            </div>
 
-            {/* Map top label */}
-            <div style={{ position:"absolute", top:10, left:10, display:"flex", alignItems:"center", gap:6, background:"rgba(8,14,26,0.85)", padding:"5px 12px", borderRadius:20, backdropFilter:"blur(4px)", zIndex:10 }}>
-              <Logo size={14}/>
-              <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:11, color:"#F9FAFB" }}>
-                Verifind <span style={{ color:"#10B981" }}>Map</span>
-                {highlighted.length>0 && <span style={{ color:"#10B981", marginLeft:4, fontSize:9 }}>· {highlighted.length} AI picks</span>}
-              </span>
-            </div>
-
-            {/* Mobile tab bar — floats over map */}
-            <div style={{ position:"absolute", top:10, right:10, zIndex:20, display:"flex", flexDirection:"column", gap:6 }}>
-              {[
-                { id:"list", icon:"🍽️", label:"List" },
-                { id:"ai",   icon:"✨", label:"AI" },
-              ].map(tab => (
-                <button key={tab.id} onClick={()=>{ setMobileTab(tab.id); setSheetExpanded(true); }}
-                  style={{ background: mobileTab===tab.id&&sheetExpanded ? "#10B981" : "rgba(8,14,26,0.9)", border:`1px solid ${mobileTab===tab.id&&sheetExpanded?"#10B981":"#2D3748"}`, borderRadius:10, padding:"8px 10px", color: mobileTab===tab.id&&sheetExpanded?"#000":"#F9FAFB", fontSize:11, fontWeight:600, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:2, backdropFilter:"blur(4px)", minWidth:44 }}>
-                  <span style={{ fontSize:16 }}>{tab.icon}</span>
-                  <span style={{ fontSize:9 }}>{tab.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Active pin detail card — floats above bottom sheet */}
-            {activePin && (
-              <div style={{ position:"absolute", bottom: sheetExpanded ? "77vh" : 64, left:12, right:12, zIndex:110, transition:"bottom 0.35s ease" }}>
-                <DetailCard r={activePin} onClose={()=>setActivePin(null)} floating={false}/>
-              </div>
-            )}
-
-            {/* Bottom Sheet */}
-            <MobileBottomSheet expanded={sheetExpanded} onToggle={()=>setSheetExpanded(p=>!p)}>
-              {/* Tab switcher inside sheet */}
-              <div style={{ display:"flex", gap:0, padding:"0 12px 10px", borderBottom:"1px solid #1a2332" }}>
-                {[
-                  { id:"list", label:"🍽️ Restaurants" },
-                  { id:"ai",   label:"✨ AI Chat" },
-                ].map(tab => (
-                  <button key={tab.id} onClick={()=>setMobileTab(tab.id)}
-                    style={{ flex:1, padding:"7px 0", background:"transparent", border:"none", borderBottom: mobileTab===tab.id ? "2px solid #10B981" : "2px solid transparent", color: mobileTab===tab.id ? "#10B981" : "#6B7280", fontSize:12, fontWeight:600, cursor:"pointer" }}>
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              {mobileTab === "ai" && (
-                <AIChat restaurants={RESTAURANTS} onHighlight={ids=>setHighlighted(ids)}/>
+              {/* AI picks badge */}
+              {highlighted.length > 0 && (
+                <div style={{ position:"absolute", top:10, left:10, display:"flex", alignItems:"center", gap:6, background:"rgba(8,14,26,0.9)", padding:"5px 12px", borderRadius:20, backdropFilter:"blur(4px)", zIndex:10 }}>
+                  <span style={{ color:"#10B981", fontSize:11, fontWeight:700 }}>✨ {highlighted.length} AI picks on map</span>
+                </div>
               )}
-              {mobileTab === "list" && (
+
+              {/* Active pin detail card */}
+              {activePin && (
+                <div style={{ position:"absolute", bottom: sheetExpanded ? "77vh" : 64, left:12, right:12, zIndex:110, transition:"bottom 0.35s ease" }}>
+                  <DetailCard r={activePin} onClose={()=>setActivePin(null)} floating={false}/>
+                </div>
+              )}
+
+              {/* Bottom Sheet — restaurant list */}
+              <MobileBottomSheet expanded={sheetExpanded} onToggle={()=>setSheetExpanded(p=>!p)}>
+                <div style={{ padding:"4px 12px 8px", borderBottom:"1px solid #1a2332", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <span style={{ fontSize:12, fontWeight:700, color:"#F9FAFB" }}>🍽️ {restaurants.length} Halal Spots</span>
+                  {highlighted.length > 0 && (
+                    <button onClick={()=>setHighlighted([])} style={{ fontSize:10, padding:"3px 10px", borderRadius:20, border:"1px solid #065f46", background:"transparent", color:"#10B981", cursor:"pointer" }}>Clear AI picks ✕</button>
+                  )}
+                </div>
                 <RestaurantListContent/>
-              )}
-            </MobileBottomSheet>
+              </MobileBottomSheet>
+            </div>
+
           </div>
         )}
 
